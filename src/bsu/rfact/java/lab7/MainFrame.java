@@ -5,15 +5,18 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class MainFrame extends JFrame {
+
     private static final String FRAME_TITLE = "Instant messaging client";
 
     private static final int FRAME_MINIMUM_WIDTH = 500;
@@ -39,6 +42,7 @@ public class MainFrame extends JFrame {
     private boolean flagPrivate;
     private DialogFrame dialogFrame;
     private ChatDataBase listOfUsers;
+
 
     public MainFrame() {
         super(FRAME_TITLE);
@@ -326,11 +330,11 @@ public class MainFrame extends JFrame {
                 }
             }
         }).start();
+
     }
 
     public JTextField getLogin() { return login; }
     public static int getServerPort() { return SERVER_PORT; }
-
     public String getDateTime() {
 
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
@@ -338,4 +342,73 @@ public class MainFrame extends JFrame {
         return dateFormat.format(date);
 
     }
+
+    private void sendMessage() {
+        try {
+            final String senderName = textFieldFrom.getText();
+            final String destinationAddress = textFieldTo.getText();
+            final String message = textAreaOutgoing.getText();
+            final String Date = date;
+
+            if (senderName.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Enter the sender's name",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                textFieldFrom.grabFocus();
+                return;
+            }
+
+            if (destinationAddress.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Enter the destination host address",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                textFieldTo.grabFocus();
+                return;
+            }
+            if (message.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Enter your message",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                textAreaOutgoing.grabFocus();
+                return;
+            }
+
+            final Socket socket = new Socket(destinationAddress, SERVER_PORT);
+
+            final DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+
+            out.writeUTF(senderName);
+            out.writeUTF(message);
+            out.writeUTF(Date);
+            socket.close();
+
+            textAreaIncoming.append(Date+"  I am -> " + destinationAddress + ": " + message + "\n");
+
+            textAreaOutgoing.setText("");
+
+        }
+
+        catch (UnknownHostException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(MainFrame.this,
+                    "Failed to send message: destination node not found",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+        catch (IOException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(MainFrame.this, "Failed to send message",
+                    "Error",JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                final MainFrame frame = new MainFrame();
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setVisible(true);
+            }
+        });
+    }
+
 }
