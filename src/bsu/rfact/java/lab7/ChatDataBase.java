@@ -14,7 +14,7 @@ public class ChatDataBase {
 
     private void openData() {
         try {
-            File file = new File("src/resources/data.txt");
+            File file = new File("src/data.txt");
             BufferedReader reader = new BufferedReader(new FileReader(file));
             String line;
             while ((line = reader.readLine()) != null) {
